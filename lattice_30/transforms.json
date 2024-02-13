@@ -2,7 +2,7 @@
     "camera_angle_x": 0.6911112070083618,
     "frames": [
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_0",
+            "file_path": "r_0",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -32,7 +32,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_1",
+            "file_path": "r_1",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -62,7 +62,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_2",
+            "file_path": "r_2",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -92,7 +92,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_3",
+            "file_path": "r_3",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -122,7 +122,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_4",
+            "file_path": "r_4",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -152,7 +152,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_5",
+            "file_path": "r_5",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -182,7 +182,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_6",
+            "file_path": "r_6",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -212,7 +212,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_7",
+            "file_path": "r_7",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -242,7 +242,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_8",
+            "file_path": "r_8",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -272,7 +272,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_9",
+            "file_path": "r_9",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -302,7 +302,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_10",
+            "file_path": "r_10",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -332,7 +332,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_11",
+            "file_path": "r_11",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -362,7 +362,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_12",
+            "file_path": "r_12",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -392,7 +392,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_13",
+            "file_path": "r_13",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -422,7 +422,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_14",
+            "file_path": "r_14",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -452,7 +452,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_15",
+            "file_path": "r_15",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -482,7 +482,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_16",
+            "file_path": "r_16",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -512,7 +512,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_17",
+            "file_path": "r_17",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -542,7 +542,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_18",
+            "file_path": "r_18",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -572,7 +572,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_19",
+            "file_path": "r_19",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -602,7 +602,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_20",
+            "file_path": "r_20",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -632,7 +632,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_21",
+            "file_path": "r_21",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -662,7 +662,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_22",
+            "file_path": "r_22",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -692,7 +692,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_23",
+            "file_path": "r_23",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -722,7 +722,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_24",
+            "file_path": "r_24",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -752,7 +752,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_25",
+            "file_path": "r_25",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -782,7 +782,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_26",
+            "file_path": "r_26",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -812,7 +812,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_27",
+            "file_path": "r_27",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -842,7 +842,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_28",
+            "file_path": "r_28",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
@@ -872,7 +872,7 @@
             ]
         },
         {
-            "file_path": "C:\\Users\\ig348\\Dropbox (Cambridge University)\\neural-networks\\nerf\\2024-february\\blender\\xray_30/r_29",
+            "file_path": "r_29",
             "rotation": 0.20943951023931956,
             "transform_matrix": [
                 [
