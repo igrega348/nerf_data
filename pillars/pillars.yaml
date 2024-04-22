@@ -1,0 +1,22 @@
+type: object_collection
+objects:
+  - type: cylinder
+    radius: 0.1
+    p0: [-0.5, -0.5, -0.8]
+    p1: [-0.5, -0.5, 0.8]
+    rho: 1.0
+  - type: cylinder
+    radius: 0.1
+    p0: [0.5, -0.5, -0.8]
+    p1: [0.5, -0.5, 0.8]
+    rho: 1.0
+  - type: cylinder
+    radius: 0.1
+    p0: [-0.5, 0.5, -0.8]
+    p1: [-0.5, 0.5, 0.8]
+    rho: 1.0
+  - type: cylinder
+    radius: 0.1
+    p0: [0.5, 0.5, -0.8]
+    p1: [0.5, 0.5, 0.8]
+    rho: 1.0
