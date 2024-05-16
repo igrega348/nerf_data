@@ -29,6 +29,7 @@ def main(
         thresh_max: Optional[float] = None,
         dtype: Optional[DTYPES] = DTYPES.UINT8
 ):
+    assert input_folder.exists()
     output_folder.mkdir(parents=True, exist_ok=True)
     files = {int(fn.stem.split('_')[-1]):fn for fn in input_folder.glob('*.tif')}
     nums = list(files.keys())
@@ -61,8 +62,31 @@ def main(
 
     def update_image():
         global m_thresh_min, m_thresh_max, img
-        img_clip = threshold_one_image(img, m_thresh_min, m_thresh_max, dtype)
+        img_clip = threshold_image_colormap(img, m_thresh_min, m_thresh_max, dtype)
         cv.imshow('image', img_clip)
+
+    def threshold_image_colormap(
+            img: np.ndarray,
+            thresh_min: float, thresh_max: float,
+            dtype: Optional[Any] = None
+    ) -> np.ndarray:
+        if dtype is None:
+            dtype = img.dtype
+        max_val = np.iinfo(dtype).max
+        img_clip = img.astype(np.float64)
+        vals_below = img < thresh_min
+        vals_above = img > thresh_max
+        img_clip = np.clip(img, thresh_min, thresh_max)
+        # rescale between min and max
+        img_clip = (img_clip - thresh_min) / (thresh_max - thresh_min) * max_val
+        img_clip = img_clip.astype(dtype)
+        # apply colormap
+        img_clip = cv.applyColorMap(img_clip, cv.COLORMAP_JET)
+        g = 0.5*max_val
+        grey = np.array([g, g, g], dtype=dtype)
+        img_clip[vals_below] = grey
+        img_clip[vals_above] = grey
+        return img_clip
 
     def threshold_one_image(
             img: np.ndarray, 
