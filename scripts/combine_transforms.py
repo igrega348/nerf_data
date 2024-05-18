@@ -15,13 +15,13 @@ def main(folder: Path):
     assert folder.is_dir()
     transforms = None
     for fn in folder.glob('transforms_*.json'):
-        # timestamp = int(fn.stem.split('_')[-1])
-        # t = timestamp*0.1
+        timestamp = int(fn.stem.split('_')[-1])
+        t = timestamp*0.1
         print(fn)
         d = json.loads(fn.read_text())
-        # for f in d['frames']:
-        #     assert 'time' in f
-        #     f['time'] = round(t,2)
+        for f in d['frames']:
+            assert 'time' in f
+            f['time'] = round(t,2)
         if transforms is None:
             transforms = d
         else:
