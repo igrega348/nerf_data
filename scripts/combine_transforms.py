@@ -16,12 +16,21 @@ def main(folder: Path):
     transforms = None
     for fn in folder.glob('transforms_*.json'):
         timestamp = int(fn.stem.split('_')[-1])
-        t = timestamp*0.1
+        t = round(timestamp*0.1, 2)
         print(fn)
         d = json.loads(fn.read_text())
         for f in d['frames']:
             assert 'time' in f
+            assert f['time']==t, f"Expected time {t} but got {f['time']}"
             f['time'] = round(t,2)
+        frames = []
+        for frame in d['frames']:
+            fn = frame['file_path']
+            if not (folder/fn).exists():
+                print(f'File {fn} does not exist. Dropping frame')
+                continue
+            frames.append(frame)
+        d['frames'] = frames
         if transforms is None:
             transforms = d
         else:
