@@ -88,7 +88,7 @@ def load_angles(fn: Path):
 def main(folder: Path):
 
     data = load_xtekct(folder)
-    H = data['XTekCT']['DetectorPixelsX']*data['XTekCT']['DetectorPixelSizeX']
+    H = data['XTekCT']['DetectorPixelsX']/2*data['XTekCT']['DetectorPixelSizeX']
     L = data['XTekCT']['SrcToDetector']
     #L = 1180 - 200
     alpha = 2*np.arctan(H/L) #* 180 / np.pi
