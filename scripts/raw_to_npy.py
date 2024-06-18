@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional, Tuple
 import tyro
 import numpy as np
+from scipy.interpolate import interpn
 
 class DTYPES(Enum):
     UINT8 = np.uint8
@@ -21,7 +22,8 @@ def main(
     input: Path, 
     resolution: Tuple[int, int, int],
     dtype: Optional[DTYPES] = DTYPES.UINT8,
-    output: Optional[Path] = None
+    output: Optional[Path] = None,
+    out_resolution: Optional[Tuple[int, int, int]] = None,
 ):
     assert input.is_file(), f'Input file {input} does not exist'
     dtype = dtype.value
@@ -29,11 +31,33 @@ def main(
     print(f'Loaded {data.size} elements of type {dtype}')
     vol = data.reshape([resolution[i] for i in [2,1,0]])
     vol = vol.swapaxes(0,2)
+    if out_resolution is None:
+        pass
+    else:
+        X, Y, Z = np.meshgrid(
+            np.linspace(0, 1, out_resolution[0]),
+            np.linspace(0, 1, out_resolution[1]),
+            np.linspace(0, 1, out_resolution[2]),
+            indexing='ij'
+        )
+        pts = np.column_stack([X.ravel(), Y.ravel(), Z.ravel()])
+        vol = interpn(
+            (
+                np.linspace(0, 1, vol.shape[0]),
+                np.linspace(0, 1, vol.shape[1]),
+                np.linspace(0, 1, vol.shape[2]),
+            ),
+            vol,
+            pts,
+            method='linear',
+            bounds_error=True,
+        )
+        vol = vol.reshape(X.shape).astype(dtype)
+        print(vol.shape)
     if output is None:
-        output = input.with_suffix('.npy')
-    np.save(output, vol)
-    # TODO: downsample. Realistically we don't need more than 256x256x256
-    # TODO: perhaps also do npz compression
+        output = input.with_suffix('.npz')
+    # np.save(output, vol)
+    np.savez_compressed(output, vol=vol)
 
 if __name__=='__main__':
     tyro.cli(main)

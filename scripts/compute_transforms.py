@@ -65,9 +65,12 @@ def load_from_ctdata(pth: Path):
     for i, line in enumerate(lines):
         if 'Index' in line:
             break
+        if 'Angle(deg)' in line:
+            columns = {'indices': 'Projection', 'angles': 'Angle(deg)'}
+            break
     df = pd.read_csv(pth, skiprows=i, delim_whitespace=True)
-    indices = df['Index'].values
-    angles = df['Angle(r)'].values
+    indices = df[columns['indices']].values
+    angles = df[columns['angles']].values
     return dict(zip(indices, angles))
 
         
@@ -88,11 +91,12 @@ def load_angles(fn: Path):
 def main(folder: Path):
 
     data = load_xtekct(folder)
-    H = data['XTekCT']['DetectorPixelsX']/2*data['XTekCT']['DetectorPixelSizeX']
+    H = data['XTekCT']['DetectorPixelsX']*data['XTekCT']['DetectorPixelSizeX'] / 2
     L = data['XTekCT']['SrcToDetector']
-    #L = 1180 - 200
     alpha = 2*np.arctan(H/L) #* 180 / np.pi
-    R = 1.5*np.sqrt(2)/2 / np.sin(alpha/2)
+    # R = 1.5*np.sqrt(2)/2 / np.sin(alpha/2)
+    # R = data['XTekCT']['SrcToObject']
+    R = L/H
     print(f'alpha: {alpha*180/np.pi}, R: {R}')
 
     f = data['XTekCT']['DetectorPixelsX'] / 2 / np.tan(alpha/2)
