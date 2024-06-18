@@ -16,20 +16,26 @@ def main(
     else:
         data = np.load(input)
     print(f'Loaded {data.size} elements of type {data.dtype}')
-    # Show 3 slices, one from each axis. Create sliders to change the slice
+    # Show 3 slices, one from each axis. Create sliders to change the slice. Also add a slider to threshold the image
     def on_change_x(val):
         x = cv.getTrackbarPos('x', 'slices')
         y = cv.getTrackbarPos('y', 'slices')
         z = cv.getTrackbarPos('z', 'slices')
+        mmin = cv.getTrackbarPos('min', 'slices')
+        mmax = cv.getTrackbarPos('max', 'slices')
+        _data = np.clip(data, mmin, mmax)
+        _data = (_data - mmin) / (mmax - mmin)
         cv.imshow('slices', np.hstack([
-            data[x,:,:],
-            data[:,y,:],
-            data[:,:,z],
+            _data[x,:,:],
+            _data[:,y,:],
+            _data[:,:,z],
         ]))
     cv.namedWindow('slices', cv.WINDOW_GUI_NORMAL)
     cv.createTrackbar('x', 'slices', 0, data.shape[0]-1, on_change_x)
     cv.createTrackbar('y', 'slices', 0, data.shape[1]-1, on_change_x)
     cv.createTrackbar('z', 'slices', 0, data.shape[2]-1, on_change_x)
+    cv.createTrackbar('min', 'slices', 0, 255, on_change_x)
+    cv.createTrackbar('max', 'slices', 255, 255, on_change_x)
     on_change_x(0)
     cv.waitKey(0)
     cv.destroyAllWindows()
