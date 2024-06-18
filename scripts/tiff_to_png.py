@@ -27,7 +27,8 @@ def main(
         output_folder: Path,
         thresh_min: Optional[float] = None,
         thresh_max: Optional[float] = None,
-        dtype: Optional[DTYPES] = DTYPES.UINT8
+        dtype: Optional[DTYPES] = DTYPES.UINT8,
+        out_fn_pattern: Optional[str] = None
 ):
     assert input_folder.exists()
     output_folder.mkdir(parents=True, exist_ok=True)
@@ -124,7 +125,12 @@ def main(
     for fn in track(tif_files, description='Thresholding tiff and saving as png'):
         img = cv.imread(str(fn), cv.IMREAD_UNCHANGED)
         img = threshold_one_image(img, m_thresh_min, m_thresh_max, dtype)
-        cv.imwrite(str((output_folder/fn.stem).with_suffix('.png')), img)
+        if out_fn_pattern is None:
+            out_fn = str((output_folder/fn.stem).with_suffix('.png'))
+        else:
+            img_ind = int(fn.stem.split('_')[-1])
+            out_fn = str(output_folder / out_fn_pattern.format(img_ind))
+        cv.imwrite(out_fn, img)
 
 if __name__ == '__main__':
     tyro.cli(main)
