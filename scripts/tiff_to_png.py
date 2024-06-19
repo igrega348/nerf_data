@@ -28,7 +28,8 @@ def main(
         thresh_min: Optional[float] = None,
         thresh_max: Optional[float] = None,
         dtype: Optional[DTYPES] = DTYPES.UINT8,
-        out_fn_pattern: Optional[str] = None
+        out_fn_pattern: Optional[str] = None,
+        transparency: Optional[bool] = False
 ):
     assert input_folder.exists()
     output_folder.mkdir(parents=True, exist_ok=True)
@@ -56,7 +57,7 @@ def main(
     def on_trackbar_rot(val):
         global img
         try:
-            img = cv.imread(str(files[val]), cv.IMREAD_UNCHANGED)
+            img = cv.imread(str(files[val]), cv.IMREAD_COLOR)
         except KeyError:
             pass
         update_image()
@@ -84,9 +85,8 @@ def main(
         # apply colormap
         img_clip = cv.applyColorMap(img_clip, cv.COLORMAP_JET)
         g = 0.5*max_val
-        grey = np.array([g, g, g], dtype=dtype)
-        img_clip[vals_below] = grey
-        img_clip[vals_above] = grey
+        img_clip[vals_below] = g
+        img_clip[vals_above] = g
         return img_clip
 
     def threshold_one_image(
@@ -102,10 +102,14 @@ def main(
         # rescale between min and max
         img_clip = (img_clip - thresh_min) / (thresh_max - thresh_min) * max_val
         img_clip = img_clip.astype(dtype)
+        if transparency:
+            mask = np.any(img_clip==max_val, axis=-1)
+            img_clip = cv.cvtColor(img_clip, cv.COLOR_BGR2BGRA)
+            img_clip[mask, 3] = 0
         return img_clip
 
     if thresh_max is None or thresh_min is None:
-        img = cv.imread(str(files[1]), cv.IMREAD_UNCHANGED)
+        img = cv.imread(str(files[1]), cv.IMREAD_COLOR)
         max_val = np.iinfo(img.dtype).max
         print(f'Input dtype {img.dtype}, max value {max_val}')
         if m_thresh_min is None:
@@ -123,7 +127,7 @@ def main(
 
     tif_files = list(input_folder.glob('*.tif'))
     for fn in track(tif_files, description='Thresholding tiff and saving as png'):
-        img = cv.imread(str(fn), cv.IMREAD_UNCHANGED)
+        img = cv.imread(str(fn), cv.IMREAD_COLOR)
         img = threshold_one_image(img, m_thresh_min, m_thresh_max, dtype)
         if out_fn_pattern is None:
             out_fn = str((output_folder/fn.stem).with_suffix('.png'))
