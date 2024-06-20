@@ -121,6 +121,10 @@ def main(
         cv.createTrackbar('threshold_max', 'image', 0, max_val, on_trackbar_thresh_max)
         cv.createTrackbar('rotation', 'image', min(nums), max(nums), on_trackbar_rot)
         cv.waitKey(50)
+        # select rectangle for flat field value
+        r = cv.selectROI('image', img)
+        flat_field = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])].mean()
+        print(f'Flat field: {flat_field / m_thresh_max:.3f}')
         k = cv.waitKey(0)
         cv.destroyAllWindows()
         print(f'Chosen thresholds: {m_thresh_min}, {m_thresh_max}')
