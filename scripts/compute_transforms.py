@@ -123,7 +123,7 @@ def main(folder: Path):
 
         cam_matrix = np.eye(4)
         
-        th_rad = np.pi * theta / 180 + np.pi/2 # 0 deg when x-axis pointing left
+        th_rad = -np.pi * theta / 180 + np.pi/2 # 0 deg when x-axis pointing left
         pos = R * np.array([np.cos(th_rad), np.sin(th_rad), 0])
         phi = np.arctan2(pos[1], pos[0]) + math.radians(90)
 
