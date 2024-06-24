@@ -25,11 +25,12 @@ def main(
         mmax = cv.getTrackbarPos('max', 'slices')
         _data = np.clip(data, mmin, mmax)
         _data = (_data - mmin) / (mmax - mmin)
-        cv.imshow('slices', np.hstack([
-            _data[x,:,:],
-            _data[:,y,:],
-            _data[:,:,z],
-        ]))
+        imshow = np.hstack([
+            _data[x,:,::-1].T,
+            _data[:,y,::-1].T,
+            _data[:,::-1,z].T,
+        ])
+        cv.imshow('slices', imshow)
     cv.namedWindow('slices', cv.WINDOW_GUI_NORMAL)
     cv.createTrackbar('x', 'slices', 0, data.shape[0]-1, on_change_x)
     cv.createTrackbar('y', 'slices', 0, data.shape[1]-1, on_change_x)

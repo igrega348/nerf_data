@@ -94,8 +94,9 @@ def main(folder: Path):
     H = data['XTekCT']['DetectorPixelsX']*data['XTekCT']['DetectorPixelSizeX'] / 2
     L = data['XTekCT']['SrcToDetector']
     alpha = 2*np.arctan(H/L) #* 180 / np.pi
-    R = 2 * data['XTekCT']['SrcToObject'] / (data['XTekCT']['VoxelSizeX']*data['XTekCT']['VoxelsX'])
-    print(f'alpha: {alpha*180/np.pi}, R: {R}')
+    scale_factor = 2 / (data['XTekCT']['VoxelSizeX']*data['XTekCT']['VoxelsX'])
+    R = data['XTekCT']['SrcToObject'] * scale_factor
+    print(f'alpha: {alpha*180/np.pi}, R: {R}, scale_factor: {scale_factor}')
 
     f = data['XTekCT']['DetectorPixelsX'] / 2 / np.tan(alpha/2)
     out_data = {
@@ -122,7 +123,7 @@ def main(folder: Path):
 
         cam_matrix = np.eye(4)
         
-        th_rad = np.pi * theta / 180    
+        th_rad = np.pi * theta / 180 + np.pi/2 # 0 deg when x-axis pointing left
         pos = R * np.array([np.cos(th_rad), np.sin(th_rad), 0])
         phi = np.arctan2(pos[1], pos[0]) + math.radians(90)
 

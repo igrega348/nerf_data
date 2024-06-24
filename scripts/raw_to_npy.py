@@ -31,7 +31,7 @@ def main(
     Args:
         input (Path): Path to .raw file
         resolution (Tuple[int, int, int]): Voxel resolution of the input file
-        dtype (Optional[DTYPES]): Output datatype. Defaults to DTYPES.UINT8.
+        dtype (Optional[DTYPES]): Input datatype. Defaults to DTYPES.UINT8.
         output (Optional[Path]): Output path. If not provided, will replace suffix with .npz
         out_resolution (Optional[Tuple[int, int, int]]): Output resolution. If not provided, will keep the same resolution as input.
         out_dtype (Optional[DTYPES]): Output datatype. If not provided, will keep the same datatype as input.

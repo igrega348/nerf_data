@@ -25,13 +25,15 @@ m_thresh_max = None
 def load_image(fn: Path) -> np.ndarray:
     # load unchanged. If not color, convert to color
     img = cv.imread(str(fn), cv.IMREAD_UNCHANGED)
+    # flip left-right
+    img = img[:, ::-1]
     if img.ndim == 2:
         img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
     return img
 
 def main(
         input_folder: Path,
-        output_folder: Path,
+        output_folder: Optional[Path] = None,
         thresh_min: Optional[float] = None,
         thresh_max: Optional[float] = None,
         dtype: Optional[DTYPES] = DTYPES.UINT8,
@@ -39,6 +41,8 @@ def main(
         transparency: Optional[bool] = False
 ):
     assert input_folder.exists()
+    if output_folder is None:
+        output_folder = input_folder
     output_folder.mkdir(parents=True, exist_ok=True)
     files = {int(fn.stem.split('_')[-1]):fn for fn in input_folder.glob('*.tif')}
     nums = list(files.keys())
@@ -132,10 +136,10 @@ def main(
         cv.waitKey(50)
         # select rectangle for flat field value
         r = cv.selectROI('image', img)
+        k = cv.waitKey(0)
         flat_field = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])].mean()
         flat_field = (flat_field - m_thresh_min) / (m_thresh_max - m_thresh_min)
         print(f'Flat field: {flat_field:.3f}')
-        k = cv.waitKey(0)
         cv.destroyAllWindows()
         print(f'Chosen thresholds: {m_thresh_min}, {m_thresh_max}')
 
