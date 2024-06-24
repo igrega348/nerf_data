@@ -22,6 +22,13 @@ class DTYPES(Enum):
 m_thresh_min = None
 m_thresh_max = None
 
+def load_image(fn: Path) -> np.ndarray:
+    # load unchanged. If not color, convert to color
+    img = cv.imread(str(fn), cv.IMREAD_UNCHANGED)
+    if img.ndim == 2:
+        img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
+    return img
+
 def main(
         input_folder: Path,
         output_folder: Path,
@@ -57,7 +64,7 @@ def main(
     def on_trackbar_rot(val):
         global img
         try:
-            img = cv.imread(str(files[val]), cv.IMREAD_COLOR)
+            img = load_image(files[val])
         except KeyError:
             pass
         update_image()
@@ -106,10 +113,12 @@ def main(
             mask = np.any(img_clip==max_val, axis=-1)
             img_clip = cv.cvtColor(img_clip, cv.COLOR_BGR2BGRA)
             img_clip[mask, 3] = 0
+        else:
+            img_clip = cv.cvtColor(img_clip, cv.COLOR_BGR2GRAY)
         return img_clip
 
     if thresh_max is None or thresh_min is None:
-        img = cv.imread(str(files[1]), cv.IMREAD_COLOR)
+        img = load_image(files[1])
         max_val = np.iinfo(img.dtype).max
         print(f'Input dtype {img.dtype}, max value {max_val}')
         if m_thresh_min is None:
@@ -124,14 +133,15 @@ def main(
         # select rectangle for flat field value
         r = cv.selectROI('image', img)
         flat_field = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])].mean()
-        print(f'Flat field: {flat_field / m_thresh_max:.3f}')
+        flat_field = (flat_field - m_thresh_min) / (m_thresh_max - m_thresh_min)
+        print(f'Flat field: {flat_field:.3f}')
         k = cv.waitKey(0)
         cv.destroyAllWindows()
         print(f'Chosen thresholds: {m_thresh_min}, {m_thresh_max}')
 
     tif_files = list(input_folder.glob('*.tif'))
     for fn in track(tif_files, description='Thresholding tiff and saving as png'):
-        img = cv.imread(str(fn), cv.IMREAD_COLOR)
+        img = load_image(fn)
         img = threshold_one_image(img, m_thresh_min, m_thresh_max, dtype)
         if out_fn_pattern is None:
             out_fn = str((output_folder/fn.stem).with_suffix('.png'))

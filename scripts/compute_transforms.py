@@ -94,9 +94,7 @@ def main(folder: Path):
     H = data['XTekCT']['DetectorPixelsX']*data['XTekCT']['DetectorPixelSizeX'] / 2
     L = data['XTekCT']['SrcToDetector']
     alpha = 2*np.arctan(H/L) #* 180 / np.pi
-    # R = 1.5*np.sqrt(2)/2 / np.sin(alpha/2)
-    # R = data['XTekCT']['SrcToObject']
-    R = L/H
+    R = 2 * data['XTekCT']['SrcToObject'] / (data['XTekCT']['VoxelSizeX']*data['XTekCT']['VoxelsX'])
     print(f'alpha: {alpha*180/np.pi}, R: {R}')
 
     f = data['XTekCT']['DetectorPixelsX'] / 2 / np.tan(alpha/2)

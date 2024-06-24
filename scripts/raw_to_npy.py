@@ -24,7 +24,18 @@ def main(
     dtype: Optional[DTYPES] = DTYPES.UINT8,
     output: Optional[Path] = None,
     out_resolution: Optional[Tuple[int, int, int]] = None,
+    out_dtype: Optional[DTYPES] = None
 ):
+    """Convert raw binary data to shaped numpy array
+
+    Args:
+        input (Path): Path to .raw file
+        resolution (Tuple[int, int, int]): Voxel resolution of the input file
+        dtype (Optional[DTYPES]): Output datatype. Defaults to DTYPES.UINT8.
+        output (Optional[Path]): Output path. If not provided, will replace suffix with .npz
+        out_resolution (Optional[Tuple[int, int, int]]): Output resolution. If not provided, will keep the same resolution as input.
+        out_dtype (Optional[DTYPES]): Output datatype. If not provided, will keep the same datatype as input.
+    """
     assert input.is_file(), f'Input file {input} does not exist'
     dtype = dtype.value
     data = np.fromfile(input, dtype=dtype)
@@ -54,6 +65,13 @@ def main(
         )
         vol = vol.reshape(X.shape).astype(dtype)
         print(vol.shape)
+    if out_dtype is not None:
+        # stretch to new dtype
+        vol = vol.astype(np.float32)
+        vol = vol - vol.min()
+        vol = vol / vol.max()
+        vol = vol * np.iinfo(out_dtype.value).max
+        vol = vol.astype(out_dtype.value)
     if output is None:
         output = input.with_suffix('.npz')
     # np.save(output, vol)
