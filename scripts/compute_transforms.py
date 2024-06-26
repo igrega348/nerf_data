@@ -70,7 +70,8 @@ def load_from_ctdata(pth: Path):
             break
     df = pd.read_csv(pth, skiprows=i, delim_whitespace=True)
     indices = df[columns['indices']].values
-    angles = df[columns['angles']].values
+    # Due to mismatch in formats, loading from _ctdata required negative sign for angle
+    angles = -df[columns['angles']].values
     return dict(zip(indices, angles))
 
         
@@ -123,7 +124,7 @@ def main(folder: Path):
 
         cam_matrix = np.eye(4)
         
-        th_rad = np.pi * theta / 180 + np.pi/2 # 0 deg when x-axis pointing left
+        th_rad = - np.pi * theta / 180 + np.pi/2 # 0 deg when x-axis pointing left
         pos = R * np.array([np.cos(th_rad), np.sin(th_rad), 0])
         phi = np.arctan2(pos[1], pos[0]) + math.radians(90)
 

@@ -10,8 +10,8 @@ from enum import Enum
 def load_image(fn: Path) -> np.ndarray:
     # load unchanged. If not color, convert to color
     img = cv.imread(str(fn), cv.IMREAD_UNCHANGED)
-    if img.ndim == 2:
-        img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
+    if img.ndim > 2:
+        img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     return img
 
 def main(

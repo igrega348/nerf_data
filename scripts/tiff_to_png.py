@@ -136,8 +136,9 @@ def main(
         cv.waitKey(50)
         # select rectangle for flat field value
         r = cv.selectROI('image', img)
+        update_image()
         k = cv.waitKey(0)
-        flat_field = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])].mean()
+        flat_field = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2]), 0].mean()
         flat_field = (flat_field - m_thresh_min) / (m_thresh_max - m_thresh_min)
         print(f'Flat field: {flat_field:.3f}')
         cv.destroyAllWindows()
