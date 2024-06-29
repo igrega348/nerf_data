@@ -24,7 +24,8 @@ def main(
     dtype: Optional[DTYPES] = DTYPES.UINT8,
     output: Optional[Path] = None,
     out_resolution: Optional[Tuple[int, int, int]] = None,
-    out_dtype: Optional[DTYPES] = None
+    out_dtype: Optional[DTYPES] = None,
+    thresholds: Optional[Tuple[float, float]] = None
 ):
     """Convert raw binary data to shaped numpy array
 
@@ -65,6 +66,10 @@ def main(
         )
         vol = vol.reshape(X.shape).astype(dtype)
         print(vol.shape)
+    if thresholds is not None:
+        low, high = thresholds
+        maxval = np.iinfo(dtype).max
+        vol = np.clip(vol, low*maxval, high*maxval)
     if out_dtype is not None:
         # stretch to new dtype
         vol = vol.astype(np.float32)
