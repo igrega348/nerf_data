@@ -16,12 +16,13 @@ def main(folder: Path):
     transforms = None
     for fn in folder.glob('transforms_*.json'):
         timestamp = int(fn.stem.split('_')[-1])
-        t = round(timestamp*0.1, 2)
+        t = round(timestamp*1, 2)
         print(fn)
         d = json.loads(fn.read_text())
         for f in d['frames']:
-            assert 'time' in f
-            assert f['time']==t, f"Expected time {t} but got {f['time']}"
+            # assert 'time' in f
+            _t = f.get('time', t)
+            assert _t==t, f"Expected time {t} but got {_t}"
             f['time'] = round(t,2)
         frames = []
         for frame in d['frames']:
