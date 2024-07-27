@@ -2,6 +2,7 @@ import os
 import math
 import json
 from pathlib import Path
+from typing import Optional
 import pandas as pd
 import numpy as np
 import tyro
@@ -89,7 +90,7 @@ def load_angles(fn: Path):
     elif 'ctdata' in pth.stem:
         return load_from_ctdata(pth)
     
-def main(folder: Path):
+def main(folder: Path, images_folder: str = 'images'):
 
     data = load_xtekct(folder)
     H = data['XTekCT']['DetectorPixelsX']*data['XTekCT']['DetectorPixelSizeX'] / 2
@@ -118,7 +119,7 @@ def main(folder: Path):
         out[:3, :3] = m
         return out
 
-    for fn in (folder/'images').glob('*.png'):
+    for fn in (folder/images_folder).glob('*.png'):
         proj_num = int(fn.stem.split('_')[-1])
         theta = angular_data[proj_num]    
 

@@ -20,7 +20,7 @@ def main(
     assert file.exists()  
     img = load_image(file)
     max_val = np.iinfo(img.dtype).max
-    print(f'Input dtype {img.dtype}, max value {max_val}')
+    print(f'Input dtype {img.dtype}, max value {max_val}. Shape {img.shape}')
     cv.namedWindow('image', cv.WINDOW_NORMAL)
     cv.waitKey(50)
     # select rectangle for flat field value
