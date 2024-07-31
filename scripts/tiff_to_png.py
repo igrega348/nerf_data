@@ -47,7 +47,7 @@ def main(
     files = {int(fn.stem.split('_')[-1]):fn for fn in input_folder.glob('*.tif')}
     nums = list(files.keys())
 
-    global m_thresh_min, m_thresh_max
+    global m_thresh_min, m_thresh_max, img
     if thresh_min is not None:
         m_thresh_min = thresh_min
     if thresh_max is not None:
@@ -68,7 +68,8 @@ def main(
     def on_trackbar_rot(val):
         global img
         try:
-            img = load_image(files[val])
+            idx = nums[val]
+            img = load_image(files[idx])
         except KeyError:
             pass
         update_image()
@@ -122,7 +123,7 @@ def main(
         return img_clip
 
     if thresh_max is None or thresh_min is None:
-        img = load_image(files[1])
+        img = load_image(files[nums[0]])
         max_val = np.iinfo(img.dtype).max
         print(f'Input dtype {img.dtype}, max value {max_val}')
         if m_thresh_min is None:
@@ -132,7 +133,7 @@ def main(
         cv.namedWindow('image', cv.WINDOW_NORMAL)
         cv.createTrackbar('threshold_min', 'image', 0, max_val, on_trackbar_thresh_min)
         cv.createTrackbar('threshold_max', 'image', 0, max_val, on_trackbar_thresh_max)
-        cv.createTrackbar('rotation', 'image', min(nums), max(nums), on_trackbar_rot)
+        cv.createTrackbar('rotation', 'image', 0, len(nums)-1, on_trackbar_rot)
         cv.waitKey(50)
         # select rectangle for flat field value
         r = cv.selectROI('image', img)
