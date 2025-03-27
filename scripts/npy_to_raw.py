@@ -20,7 +20,6 @@ class DTYPES(Enum):
 
 def main(
     input: Path,
-    resolution: Tuple[int, int, int],
     dtype: Optional[DTYPES] = DTYPES.UINT8,
     output: Optional[Path] = None,
     out_resolution: Optional[Tuple[int, int, int]] = None,
@@ -31,7 +30,6 @@ def main(
 
     Args:
         input (Path): Path to .npy or .npz file
-        resolution (Tuple[int, int, int]): Voxel resolution of the output file
         dtype (Optional[DTYPES]): Output datatype. Defaults to DTYPES.UINT8.
         output (Optional[Path]): Output path. If not provided, will replace suffix with .raw
         out_resolution (Optional[Tuple[int, int, int]]): Output resolution. If not provided, will keep the same resolution as input.
@@ -89,9 +87,9 @@ def main(
     else:
         vol = vol.astype(dtype.value)
     
-    # Reshape and reorder axes to match raw format
+    # Reorder axes to match raw format (Z,Y,X order) and flatten
     vol = vol.swapaxes(0, 2)
-    vol = vol.reshape([resolution[i] for i in [2,1,0]])
+    vol = vol.ravel()  # This flattens the array in C-order (row-major)
     
     # Save to raw file
     if output is None:
