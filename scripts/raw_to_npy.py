@@ -41,6 +41,7 @@ def main(
     dtype = dtype.value
     data = np.fromfile(input, dtype=dtype)
     print(f'Loaded {data.size} elements of type {dtype}')
+    print(f'Max: {data.max()}, Min: {data.min()}, Mean: {data.mean()}, Std: {data.std()}')
     vol = data.reshape([resolution[i] for i in [2,1,0]])
     vol = vol.swapaxes(0,2)
     if out_resolution is None:
@@ -68,8 +69,10 @@ def main(
         print(vol.shape)
     if thresholds is not None:
         low, high = thresholds
-        maxval = np.iinfo(dtype).max
-        vol = np.clip(vol, low*maxval, high*maxval)
+        minval = vol.min()
+        maxval = vol.max()
+        rng = maxval - minval
+        vol = np.clip(vol, minval + low*rng, minval + high*rng)
     if out_dtype is not None:
         # stretch to new dtype
         vol = vol.astype(np.float32)
