@@ -1,5 +1,5 @@
 # %%
-from typing import Optional, Literal, Any
+from typing import Optional, Literal, Any, Callable
 import cv2 as cv
 import numpy as np
 from pathlib import Path
@@ -22,9 +22,10 @@ class DTYPES(Enum):
 m_thresh_min = None
 m_thresh_max = None
 
-def load_image(fn: Path) -> np.ndarray:
+def load_image(fn: Path, greyscale_fn: Callable) -> np.ndarray:
     # load unchanged. If not color, convert to color
     img = cv.imread(str(fn), cv.IMREAD_UNCHANGED)
+    img = greyscale_fn(img).astype(img.dtype)
     # flip left-right
     img = img[:, ::-1]
     if img.ndim == 2:
@@ -38,7 +39,8 @@ def main(
         thresh_max: Optional[float] = None,
         dtype: Optional[DTYPES] = DTYPES.UINT8,
         out_fn_pattern: Optional[str] = None,
-        transparency: Optional[bool] = False
+        transparency: Optional[bool] = False,
+        greyscale_fn: Optional[str] = None
 ):
     assert input_folder.exists()
     if output_folder is None:
@@ -52,6 +54,12 @@ def main(
         m_thresh_min = thresh_min
     if thresh_max is not None:
         m_thresh_max = thresh_max
+
+    if greyscale_fn is None:
+        greyscale_fn = lambda x: x
+    else:
+        print(f'Using greyscale function: {greyscale_fn}')
+        greyscale_fn = eval(greyscale_fn)
 
     dtype = dtype.value
 
@@ -69,7 +77,7 @@ def main(
         global img
         try:
             idx = nums[val]
-            img = load_image(files[idx])
+            img = load_image(files[idx], greyscale_fn)
         except KeyError:
             pass
         update_image()
@@ -123,7 +131,7 @@ def main(
         return img_clip
 
     if thresh_max is None or thresh_min is None:
-        img = load_image(files[nums[0]])
+        img = load_image(files[nums[0]], greyscale_fn)
         max_val = np.iinfo(img.dtype).max
         print(f'Input dtype {img.dtype}, max value {max_val}')
         if m_thresh_min is None:
@@ -147,7 +155,7 @@ def main(
 
     tif_files = list(input_folder.glob('*.tif'))
     for fn in track(tif_files, description='Thresholding tiff and saving as png'):
-        img = load_image(fn)
+        img = load_image(fn, greyscale_fn)
         img = threshold_one_image(img, m_thresh_min, m_thresh_max, dtype)
         if out_fn_pattern is None:
             out_fn = str((output_folder/fn.stem).with_suffix('.png'))
