@@ -23,6 +23,7 @@ def main(
     input: Path,
     resolution: Optional[Tuple[int, int, int]] = None,
     dtype: Optional[DTYPES] = None,
+    downsample: Optional[int] = None
 ):
     assert input.is_file(), f'Input file {input} does not exist'
     if input.suffix == '.npz':
@@ -39,6 +40,9 @@ def main(
     else:
         data = np.load(input)
     print(f'Loaded {data.size} elements of type {data.dtype}')
+    if downsample is not None:
+        data = data[::downsample, ::downsample, ::downsample]
+        print(f'Downsampled to {data.shape}')
     data_min = data.min()
     data_max = data.max()
     data_range = data_max - data_min
@@ -71,7 +75,7 @@ def main(
     cv.setTrackbarPos('y', 'slices', (data.shape[1]-1)//2)
     cv.setTrackbarPos('z', 'slices', (data.shape[2]-1)//2)
     on_change_x(0)
-    
+
     cv.waitKey(0)
     cv.destroyAllWindows()
 
