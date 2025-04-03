@@ -48,7 +48,7 @@ def main(
     output_folder.mkdir(parents=True, exist_ok=True)
     files = {int(fn.stem.split('_')[-1]):fn for fn in input_folder.glob('*.tif')}
     nums = list(files.keys())
-    print(f'Found {len(files)} tiff files in {input}')
+    print(f'Found {len(files)} tiff files in {input_folder}')
 
     global m_thresh_min, m_thresh_max, img
     if thresh_min is not None:
@@ -154,7 +154,7 @@ def main(
         cv.destroyAllWindows()
         print(f'Chosen thresholds: {m_thresh_min}, {m_thresh_max}')
 
-    tif_files = list(input.glob('*.tif'))
+    tif_files = list(input_folder.glob('*.tif'))
     for fn in track(tif_files, description='Thresholding tiff and saving as png'):
         img = load_image(fn, greyscale_fn)
         img = threshold_one_image(img, m_thresh_min, m_thresh_max, dtype)
