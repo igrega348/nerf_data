@@ -2,26 +2,34 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 import tyro
 
 
-def main(folder: Path):
+def main(folder: Path, timestamp_func: Optional[str] = None):
     """Combine transform files from folder into a single file.
 
     Args:
         folder (Path): path to folder containing transform files.
             transform files are named transforms_*.json. 
+        timestamp_func (Optional[str], optional): Function to convert timestamp to time.
+            Use lambda function. If not provided, the timestamp is used as is.
     """
+    if timestamp_func is not None:
+        t_f = eval(timestamp_func)
+    else:
+        t_f = lambda x: float(x)
     assert folder.is_dir()
     transforms = None
     for fn in folder.glob('transforms_*.json'):
         timestamp = int(fn.stem.split('_')[-1])
-        t = round(timestamp*0.1, 2)
+        t = t_f(timestamp)
         print(fn)
         d = json.loads(fn.read_text())
         for f in d['frames']:
-            assert 'time' in f
-            assert f['time']==t, f"Expected time {t} but got {f['time']}"
+            # assert 'time' in f
+            _t = f.get('time', t)
+            assert _t==t, f"Expected time {t} but got {_t}"
             f['time'] = round(t,2)
         frames = []
         for frame in d['frames']:

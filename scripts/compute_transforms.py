@@ -2,6 +2,7 @@ import os
 import math
 import json
 from pathlib import Path
+from typing import Optional
 import pandas as pd
 import numpy as np
 import tyro
@@ -64,18 +65,14 @@ def load_from_ctdata(pth: Path):
     print(f'Loaded {len(lines)} lines from "{pth}"')
     for i, line in enumerate(lines):
         if 'Index' in line:
-            kwd = 'Index'
-            ang = 'Angle(r)'
-            istart = i
-        elif 'Projection' in line:
-            kwd = 'Projection'
-            ang = 'Angle(deg)'
-            istart = i
-            # do not break but take the last occurence of the keywords
-    print(f'Using "{kwd}" and "{ang}" from line {istart+1}')
-    df = pd.read_csv(pth, skiprows=istart, delim_whitespace=True)
-    indices = df[kwd].values
-    angles = df[ang].values
+            break
+        if 'Angle(deg)' in line:
+            columns = {'indices': 'Projection', 'angles': 'Angle(deg)'}
+            break
+    df = pd.read_csv(pth, skiprows=i, delim_whitespace=True)
+    indices = df[columns['indices']].values
+    # Due to mismatch in formats, loading from _ctdata required negative sign for angle
+    angles = -df[columns['angles']].values
     return dict(zip(indices, angles))
 
         
@@ -93,15 +90,24 @@ def load_angles(fn: Path):
     elif 'ctdata' in pth.stem:
         return load_from_ctdata(pth)
     
-def main(folder: Path):
+def main(
+        folder: Path, 
+        images_folder: str = 'images',
+        xtekct_file: Optional[str] = None,
+        angles_file: Optional[str] = None,
+        output_fname: Optional[str] = 'transforms.json'
+):
 
-    data = load_xtekct(folder)
-    H = data['XTekCT']['DetectorPixelsX']/2*data['XTekCT']['DetectorPixelSizeX']
+    if xtekct_file is not None:
+        data = load_xtekct(folder / xtekct_file)
+    else:
+        data = load_xtekct(folder)
+    H = data['XTekCT']['DetectorPixelsX']*data['XTekCT']['DetectorPixelSizeX'] / 2
     L = data['XTekCT']['SrcToDetector']
-    #L = 1180 - 200
     alpha = 2*np.arctan(H/L) #* 180 / np.pi
-    R = 1.5*np.sqrt(2)/2 / np.sin(alpha/2)
-    print(f'alpha: {alpha*180/np.pi}, R: {R}')
+    scale_factor = 2 / (data['XTekCT']['VoxelSizeX']*data['XTekCT']['VoxelsX'])
+    R = data['XTekCT']['SrcToObject'] * scale_factor
+    print(f'alpha: {alpha*180/np.pi}, R: {R}, scale_factor: {scale_factor}')
 
     f = data['XTekCT']['DetectorPixelsX'] / 2 / np.tan(alpha/2)
     out_data = {
@@ -115,20 +121,23 @@ def main(folder: Path):
         'frames': []
     }
 
-    angular_data = load_angles(folder)
+    if angles_file is not None:
+        angular_data = load_angles(folder/angles_file)
+    else:
+        angular_data = load_angles(folder)
 
     def m4(m: np.ndarray) -> np.ndarray:
         out = np.eye(4)
         out[:3, :3] = m
         return out
 
-    for fn in (folder/'images').glob('*.png'):
+    for fn in (folder/images_folder).glob('*.png'):
         proj_num = int(fn.stem.split('_')[-1])
         theta = angular_data[proj_num]    
 
         cam_matrix = np.eye(4)
         
-        th_rad = np.pi * theta / 180    
+        th_rad = - np.pi * theta / 180 + np.pi/2 # 0 deg when x-axis pointing left
         pos = R * np.array([np.cos(th_rad), np.sin(th_rad), 0])
         phi = np.arctan2(pos[1], pos[0]) + math.radians(90)
 
@@ -151,8 +160,8 @@ def main(folder: Path):
         }
         out_data['frames'].append(frame_data)
 
-    (folder / 'transforms.json').write_text(json.dumps(out_data, indent=2))
-    print(f'Saved {(folder/"transforms.json").as_posix()} with {len(out_data["frames"])} frames')
+    (folder / output_fname).write_text(json.dumps(out_data, indent=2))
+    print(f'Saved {(folder / output_fname).as_posix()} with {len(out_data["frames"])} frames')
 
 if __name__ == '__main__':
     tyro.cli(main)

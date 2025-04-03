@@ -1,5 +1,5 @@
 # %%
-from typing import Optional, Literal, Any
+from typing import Optional, Literal, Any, Callable
 import cv2 as cv
 import numpy as np
 from pathlib import Path
@@ -22,24 +22,45 @@ class DTYPES(Enum):
 m_thresh_min = None
 m_thresh_max = None
 
+def load_image(fn: Path, greyscale_fn: Callable) -> np.ndarray:
+    # load unchanged. If not color, convert to color
+    img = cv.imread(str(fn), cv.IMREAD_UNCHANGED)
+    img = greyscale_fn(img).astype(img.dtype)
+    # flip left-right
+    img = img[:, ::-1]
+    if img.ndim == 2:
+        img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
+    return img
+
 def main(
-        input: Path,
-        output_dir: Path,
+        input_folder: Path,
+        output_folder: Optional[Path] = None,
         thresh_min: Optional[float] = None,
         thresh_max: Optional[float] = None,
-        dtype: Optional[DTYPES] = DTYPES.UINT8
+        dtype: Optional[DTYPES] = DTYPES.UINT8,
+        out_fn_pattern: Optional[str] = None,
+        transparency: Optional[bool] = False,
+        greyscale_fn: Optional[str] = None
 ):
-    assert input.exists()
-    output_dir.mkdir(parents=True, exist_ok=True)
-    files = {int(fn.stem.split('_')[-1]):fn for fn in input.glob('*.tif')}
+    assert input_folder.exists()
+    if output_folder is None:
+        output_folder = input_folder
+    output_folder.mkdir(parents=True, exist_ok=True)
+    files = {int(fn.stem.split('_')[-1]):fn for fn in input_folder.glob('*.tif')}
     nums = list(files.keys())
     print(f'Found {len(files)} tiff files in {input}')
 
-    global m_thresh_min, m_thresh_max
+    global m_thresh_min, m_thresh_max, img
     if thresh_min is not None:
         m_thresh_min = thresh_min
     if thresh_max is not None:
         m_thresh_max = thresh_max
+
+    if greyscale_fn is None:
+        greyscale_fn = lambda x: x
+    else:
+        print(f'Using greyscale function: {greyscale_fn}')
+        greyscale_fn = eval(greyscale_fn)
 
     dtype = dtype.value
 
@@ -56,7 +77,8 @@ def main(
     def on_trackbar_rot(val):
         global img
         try:
-            img = cv.imread(str(files[val]), cv.IMREAD_UNCHANGED)
+            idx = nums[val]
+            img = load_image(files[idx], greyscale_fn)
         except KeyError:
             pass
         update_image()
@@ -84,9 +106,8 @@ def main(
         # apply colormap
         img_clip = cv.applyColorMap(img_clip, cv.COLORMAP_JET)
         g = 0.5*max_val
-        grey = np.array([g, g, g], dtype=dtype)
-        img_clip[vals_below] = grey
-        img_clip[vals_above] = grey
+        img_clip[vals_below] = g
+        img_clip[vals_above] = g
         return img_clip
 
     def threshold_one_image(
@@ -102,10 +123,16 @@ def main(
         # rescale between min and max
         img_clip = (img_clip - thresh_min) / (thresh_max - thresh_min) * max_val
         img_clip = img_clip.astype(dtype)
+        if transparency:
+            mask = np.any(img_clip==max_val, axis=-1)
+            img_clip = cv.cvtColor(img_clip, cv.COLOR_BGR2BGRA)
+            img_clip[mask, 3] = 0
+        else:
+            img_clip = cv.cvtColor(img_clip, cv.COLOR_BGR2GRAY)
         return img_clip
 
     if thresh_max is None or thresh_min is None:
-        img = cv.imread(str(files[1]), cv.IMREAD_UNCHANGED)
+        img = load_image(files[nums[0]], greyscale_fn)
         max_val = np.iinfo(img.dtype).max
         print(f'Input dtype {img.dtype}, max value {max_val}')
         if m_thresh_min is None:
@@ -115,17 +142,28 @@ def main(
         cv.namedWindow('image', cv.WINDOW_NORMAL)
         cv.createTrackbar('threshold_min', 'image', 0, max_val, on_trackbar_thresh_min)
         cv.createTrackbar('threshold_max', 'image', 0, max_val, on_trackbar_thresh_max)
-        cv.createTrackbar('rotation', 'image', min(nums), max(nums), on_trackbar_rot)
+        cv.createTrackbar('rotation', 'image', 0, len(nums)-1, on_trackbar_rot)
         cv.waitKey(50)
+        # select rectangle for flat field value
+        r = cv.selectROI('image', img)
+        update_image()
         k = cv.waitKey(0)
+        flat_field = img[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2]), 0].mean()
+        flat_field = (flat_field - m_thresh_min) / (m_thresh_max - m_thresh_min)
+        print(f'Flat field: {flat_field:.3f}')
         cv.destroyAllWindows()
         print(f'Chosen thresholds: {m_thresh_min}, {m_thresh_max}')
 
     tif_files = list(input.glob('*.tif'))
     for fn in track(tif_files, description='Thresholding tiff and saving as png'):
-        img = cv.imread(str(fn), cv.IMREAD_UNCHANGED)
+        img = load_image(fn, greyscale_fn)
         img = threshold_one_image(img, m_thresh_min, m_thresh_max, dtype)
-        cv.imwrite(str((output_dir/fn.stem).with_suffix('.png')), img)
+        if out_fn_pattern is None:
+            out_fn = str((output_folder/fn.stem).with_suffix('.png'))
+        else:
+            img_ind = int(fn.stem.split('_')[-1])
+            out_fn = str(output_folder / out_fn_pattern.format(img_ind))
+        cv.imwrite(out_fn, img)
 
 if __name__ == '__main__':
     tyro.cli(main)
