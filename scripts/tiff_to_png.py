@@ -23,16 +23,17 @@ m_thresh_min = None
 m_thresh_max = None
 
 def main(
-        input_folder: Path,
-        output_folder: Path,
+        input: Path,
+        output_dir: Path,
         thresh_min: Optional[float] = None,
         thresh_max: Optional[float] = None,
         dtype: Optional[DTYPES] = DTYPES.UINT8
 ):
-    assert input_folder.exists()
-    output_folder.mkdir(parents=True, exist_ok=True)
-    files = {int(fn.stem.split('_')[-1]):fn for fn in input_folder.glob('*.tif')}
+    assert input.exists()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    files = {int(fn.stem.split('_')[-1]):fn for fn in input.glob('*.tif')}
     nums = list(files.keys())
+    print(f'Found {len(files)} tiff files in {input}')
 
     global m_thresh_min, m_thresh_max
     if thresh_min is not None:
@@ -62,7 +63,7 @@ def main(
 
     def update_image():
         global m_thresh_min, m_thresh_max, img
-        img_clip = threshold_image_colormap(img, m_thresh_min, m_thresh_max, dtype)
+        img_clip = threshold_image_colormap(img, m_thresh_min, m_thresh_max, DTYPES.UINT8.value)
         cv.imshow('image', img_clip)
 
     def threshold_image_colormap(
@@ -120,11 +121,11 @@ def main(
         cv.destroyAllWindows()
         print(f'Chosen thresholds: {m_thresh_min}, {m_thresh_max}')
 
-    tif_files = list(input_folder.glob('*.tif'))
+    tif_files = list(input.glob('*.tif'))
     for fn in track(tif_files, description='Thresholding tiff and saving as png'):
         img = cv.imread(str(fn), cv.IMREAD_UNCHANGED)
         img = threshold_one_image(img, m_thresh_min, m_thresh_max, dtype)
-        cv.imwrite(str((output_folder/fn.stem).with_suffix('.png')), img)
+        cv.imwrite(str((output_dir/fn.stem).with_suffix('.png')), img)
 
 if __name__ == '__main__':
     tyro.cli(main)

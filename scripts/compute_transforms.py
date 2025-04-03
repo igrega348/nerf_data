@@ -64,10 +64,18 @@ def load_from_ctdata(pth: Path):
     print(f'Loaded {len(lines)} lines from "{pth}"')
     for i, line in enumerate(lines):
         if 'Index' in line:
-            break
-    df = pd.read_csv(pth, skiprows=i, delim_whitespace=True)
-    indices = df['Index'].values
-    angles = df['Angle(r)'].values
+            kwd = 'Index'
+            ang = 'Angle(r)'
+            istart = i
+        elif 'Projection' in line:
+            kwd = 'Projection'
+            ang = 'Angle(deg)'
+            istart = i
+            # do not break but take the last occurence of the keywords
+    print(f'Using "{kwd}" and "{ang}" from line {istart+1}')
+    df = pd.read_csv(pth, skiprows=istart, delim_whitespace=True)
+    indices = df[kwd].values
+    angles = df[ang].values
     return dict(zip(indices, angles))
 
         
