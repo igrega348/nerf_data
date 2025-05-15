@@ -2,7 +2,7 @@ import os
 import math
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple, Literal, Union
 import pandas as pd
 import numpy as np
 import tyro
@@ -47,7 +47,19 @@ def load_xtekct(fn: Path):
             
     return data
 
-def load_from_ang(pth: Path):
+def load_exposure_time(fn: Union[Path, str]) -> float:
+    if isinstance(fn, str): fn = Path(fn)
+    if fn.is_file():
+        pth = fn
+    else:
+        pth = next(fn.glob('*.ctinfo.xml'))
+    lines = pth.read_text().split('\n')
+    for line in lines:
+        if 'ExposureMilliseconds' in line:
+            return float(line.lstrip(' <ExposureMilliseconds>').rstrip('</ExposureMilliseconds>')) / 1000.0
+    raise ValueError(f'No exposure time found in {pth}')
+
+def load_from_ang(pth: Path) -> pd.DataFrame:
     txt = pth.read_text()
     lines = txt.split('\n')
     print(f'Loaded {len(lines)} lines from "{pth}"')
@@ -57,9 +69,39 @@ def load_from_ang(pth: Path):
         if len(line)<1: continue
         key, val = line.split(':')
         data[int(key)] = float(val)
-    return data
+    df = pd.Series(data).to_frame(name='angles')
+    # rename columns and convert to dataframe
+    df.index.name = 'indices'
+    return df
 
-def load_from_ctdata(pth: Path):
+def gaussian_quadrature_points(n: int) -> Tuple[np.ndarray, np.ndarray]: 
+    # returns points and weights for Gaussian quadrature
+    # input points are between -1 and 1
+    if n == 1:
+        return np.array([0]), np.array([1])
+    if n == 2:
+        return np.array([-1/np.sqrt(3), 1/np.sqrt(3)]), np.array([1, 1])
+    if n == 3:
+        return np.array([-np.sqrt(3/5), 0, np.sqrt(3/5)]), np.array([5/9, 8/9, 5/9])
+    if n == 4:
+        return np.array([-np.sqrt(3/7 + 2/7*np.sqrt(6/5)), -np.sqrt(3/7 - 2/7*np.sqrt(6/5)), np.sqrt(3/7 - 2/7*np.sqrt(6/5)), np.sqrt(3/7 + 2/7*np.sqrt(6/5))]), np.array([(18-np.sqrt(30))/36, (18+np.sqrt(30))/36, (18+np.sqrt(30))/36, (18-np.sqrt(30))/36])
+    if n == 5:
+        return np.array([-1/3*np.sqrt(5 + 2*np.sqrt(10/7)), -1/3*np.sqrt(5 - 2*np.sqrt(10/7)), 0, 1/3*np.sqrt(5 - 2*np.sqrt(10/7)), 1/3*np.sqrt(5 + 2*np.sqrt(10/7))]), np.array([(322 - 13*np.sqrt(70))/900, (322 + 13*np.sqrt(70))/900, 128/225, (322 + 13*np.sqrt(70))/900, (322 - 13*np.sqrt(70))/900])
+    raise ValueError(f'Gaussian quadrature points for {n} points not implemented')
+
+def uniform_quadrature_points(n: int) -> Tuple[np.ndarray, np.ndarray]:
+    # returns points and weights for uniform quadrature
+    # input points are between -1 and 1
+    if n == 1:
+        return np.array([0]), np.array([1])
+    points = np.linspace(-1, 1, n)
+    weights = np.ones(n)
+    weights[0] = 0.5
+    weights[-1] = 0.5
+    weights /= (n-1)
+    return points, weights
+
+def load_from_ctdata(pth: Path) -> pd.DataFrame:
     txt = pth.read_text()
     lines = txt.split('\n')
     print(f'Loaded {len(lines)} lines from "{pth}"')
@@ -67,16 +109,18 @@ def load_from_ctdata(pth: Path):
         if 'Index' in line:
             break
         if 'Angle(deg)' in line:
-            columns = {'indices': 'Projection', 'angles': 'Angle(deg)'}
+            columns = {'Projection': 'indices', 'Angle(deg)': 'angles', 'Time(s)': 'times'}
             break
     df = pd.read_csv(pth, skiprows=i, delim_whitespace=True)
-    indices = df[columns['indices']].values
+    # rename columns
+    df.rename(columns=columns, inplace=True)
     # Due to mismatch in formats, loading from _ctdata required negative sign for angle
-    angles = -df[columns['angles']].values
-    return dict(zip(indices, angles))
+    df['angles'] = -df['angles']
+    df.set_index('indices', inplace=True, drop=True)
+    return df
 
         
-def load_angles(fn: Path):
+def load_angles(fn: Path) -> pd.DataFrame:
     if isinstance(fn, str): fn = Path(fn)
     if fn.is_file():
         pth = fn
@@ -89,13 +133,42 @@ def load_angles(fn: Path):
         return load_from_ang(pth)
     elif 'ctdata' in pth.stem:
         return load_from_ctdata(pth)
+
+def m4(m: np.ndarray) -> np.ndarray:
+    out = np.eye(4)
+    out[:3, :3] = m
+    return out
+    
+def pose_to_matrix(theta: float, R: float):
+    cam_matrix = np.eye(4)
+    
+    th_rad = - np.pi * theta / 180 + np.pi/2 # 0 deg when x-axis pointing left
+    pos = R * np.array([np.cos(th_rad), np.sin(th_rad), 0])
+    phi = np.arctan2(pos[1], pos[0]) + math.radians(90)
+
+    # Blender way
+    cam_matrix[:3, 3] = pos
+    cam_matrix = cam_matrix@m4(Rotation.from_rotvec(np.pi/2 * np.array([1,0,0])).as_matrix()) # rotate 90 degrees around x
+    cam_matrix = cam_matrix@m4(Rotation.from_rotvec(phi * np.array([0,1,0])).as_matrix())
+    # Could do the rotations in one go
+    # cam_matrix = m4(Rotation.from_euler('XY', [np.pi/2, phi]).as_matrix())@cam_matrix
+    # cam_matrix[:3, 3] = pos
+    # or
+    # cam_matrix = m4(Rotation.from_euler('xz', [np.pi/2, phi]).as_matrix())@cam_matrix
+    # cam_matrix = cam_matrix@m4(Rotation.from_euler('XZ', [np.pi/2, phi]).as_matrix())
+    # cam_matrix[:3, 3] = pos
+    return cam_matrix
     
 def main(
         folder: Path, 
         images_folder: str = 'images',
         xtekct_file: Optional[str] = None,
         angles_file: Optional[str] = None,
-        output_fname: Optional[str] = 'transforms.json'
+        exposure_file: Optional[str] = None,
+        output_fname: Optional[str] = 'transforms.json',
+        deblurring: Literal['Gauss', 'uniform', None] = None,
+        deblurring_points: int = 7,
+        time: Optional[float] = None,
 ):
 
     if xtekct_file is not None:
@@ -126,39 +199,72 @@ def main(
     else:
         angular_data = load_angles(folder)
 
-    def m4(m: np.ndarray) -> np.ndarray:
-        out = np.eye(4)
-        out[:3, :3] = m
-        return out
+    if deblurring is not None:
+        if exposure_file is not None:
+            exposure_time = load_exposure_time(folder / exposure_file)
+        else:
+            exposure_time = load_exposure_time(folder)
+        fit = np.polyfit(angular_data['times'], angular_data['angles'], deg=1)
+        angular_data['angles_fit'] = np.polyval(fit, angular_data['times'])
+
+    min_time = 1<<20
+    max_time = -1<<20
 
     for fn in (folder/images_folder).glob('*.png'):
-        proj_num = int(fn.stem.split('_')[-1])
-        theta = angular_data[proj_num]    
-
-        cam_matrix = np.eye(4)
-        
-        th_rad = - np.pi * theta / 180 + np.pi/2 # 0 deg when x-axis pointing left
-        pos = R * np.array([np.cos(th_rad), np.sin(th_rad), 0])
-        phi = np.arctan2(pos[1], pos[0]) + math.radians(90)
-
-        # Blender way
-        cam_matrix[:3, 3] = pos
-        cam_matrix = cam_matrix@m4(Rotation.from_rotvec(np.pi/2 * np.array([1,0,0])).as_matrix()) # rotate 90 degrees around x
-        cam_matrix = cam_matrix@m4(Rotation.from_rotvec(phi * np.array([0,1,0])).as_matrix())
-        # Could do the rotations in one go
-        # cam_matrix = m4(Rotation.from_euler('XY', [np.pi/2, phi]).as_matrix())@cam_matrix
-        # cam_matrix[:3, 3] = pos
-        # or
-        # cam_matrix = m4(Rotation.from_euler('xz', [np.pi/2, phi]).as_matrix())@cam_matrix
-        # cam_matrix = cam_matrix@m4(Rotation.from_euler('XZ', [np.pi/2, phi]).as_matrix())
-        # cam_matrix[:3, 3] = pos
-
-        
         frame_data = {
             'file_path': fn.relative_to(folder).as_posix(),
-            'transform_matrix': listify_matrix(cam_matrix)
         }
+        
+        proj_num = int(fn.stem.split('_')[-1])
+        if deblurring is None:
+            theta = angular_data.loc[proj_num, 'angles']
+            cam_matrix = pose_to_matrix(theta, R)
+            frame_data['transform_matrix'] = listify_matrix(cam_matrix)
+            if time is not None:
+                frame_data['time'] = time
+            else:
+                frame_data['time'] = 0.0
+        else:
+            _time = angular_data.loc[proj_num, 'times']
+            if deblurring=='Gauss':
+                quad_points, quad_weights = gaussian_quadrature_points(deblurring_points)
+            elif deblurring=='uniform':
+                quad_points, quad_weights = uniform_quadrature_points(deblurring_points)
+            else:
+                raise ValueError(f'Unknown deblurring method {deblurring}')
+            # instead of _time-0.5*exposure_time, start at _time -0.7416*exposure_time (empirical offset)
+            times = _time - 0.7416*exposure_time + (quad_points/2 + 0.5) * exposure_time
+            thetas = np.polyval(fit, times)
+            print(thetas.mean())
+            cam_matrices = [listify_matrix(pose_to_matrix(theta, R)) for theta in thetas]
+            if time is not None:
+                times = [time] * len(cam_matrices)
+            elif 'eval' in fn.stem:
+                _time = time if time is not None else 1.0
+                times = [_time] * len(cam_matrices)
+            else:
+                times = times.tolist()
+                min_time = min(min_time, min(times))
+                max_time = max(max_time, max(times))
+
+            frame_data.update({
+                'transform_matrix': cam_matrices,
+                'time': times,
+                'camera_weights': quad_weights.tolist()
+            })
+
         out_data['frames'].append(frame_data)
+
+
+    # normalize time between 0 and 1
+    if deblurring is not None:
+        for frame_data in out_data['frames']:
+            if 'eval' in frame_data['file_path']:
+                continue
+            if isinstance(frame_data['time'], list):
+                frame_data['time'] = [(t-min_time)/(max_time-min_time) for t in frame_data['time']]
+            else:
+                frame_data['time'] = (frame_data['time']-min_time)/(max_time-min_time)
 
     (folder / output_fname).write_text(json.dumps(out_data, indent=2))
     print(f'Saved {(folder / output_fname).as_posix()} with {len(out_data["frames"])} frames')

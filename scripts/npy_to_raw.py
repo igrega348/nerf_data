@@ -20,7 +20,6 @@ class DTYPES(Enum):
 
 def main(
     input: Path,
-    dtype: Optional[DTYPES] = DTYPES.UINT8,
     output: Optional[Path] = None,
     out_resolution: Optional[Tuple[int, int, int]] = None,
     out_dtype: Optional[DTYPES] = None,
@@ -73,8 +72,10 @@ def main(
     # Handle thresholds if provided
     if thresholds is not None:
         low, high = thresholds
-        maxval = np.iinfo(vol.dtype).max
-        vol = np.clip(vol, low*maxval, high*maxval)
+        minval = vol.min()
+        maxval = vol.max()
+        rng = maxval - minval
+        vol = np.clip(vol, minval + low*rng, minval + high*rng)
     
     # Handle dtype conversion if needed
     if out_dtype is not None:
@@ -84,8 +85,6 @@ def main(
         vol = vol / vol.max()
         vol = vol * np.iinfo(out_dtype.value).max
         vol = vol.astype(out_dtype.value)
-    else:
-        vol = vol.astype(dtype.value)
     
     # Reorder axes to match raw format (Z,Y,X order) and flatten
     vol = vol.swapaxes(0, 2)

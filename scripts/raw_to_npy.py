@@ -41,7 +41,7 @@ def main(
     dtype = dtype.value
     data = np.fromfile(input, dtype=dtype)
     print(f'Loaded {data.size} elements of type {dtype}')
-    print(f'Max: {data.max()}, Min: {data.min()}, Mean: {data.mean()}, Std: {data.std()}')
+    print(f'Min: {data.min()}, Max: {data.max()}, Mean: {data.mean()}, Std: {data.std()}')
     vol = data.reshape([resolution[i] for i in [2,1,0]])
     vol = vol.swapaxes(0,2)
     if out_resolution is None:

@@ -3,7 +3,7 @@ from typing import Optional, Literal, Any, Callable
 import cv2 as cv
 import numpy as np
 from pathlib import Path
-from rich.progress import track
+from tqdm import tqdm
 import tyro
 from enum import Enum
 # %%
@@ -155,7 +155,10 @@ def main(
         print(f'Chosen thresholds: {m_thresh_min}, {m_thresh_max}')
 
     tif_files = list(input_folder.glob('*.tif'))
-    for fn in track(tif_files, description='Thresholding tiff and saving as png'):
+    pbar = tqdm(tif_files, desc='Processing images')
+    im_min = np.iinfo(dtype).max
+    im_max = np.iinfo(dtype).min
+    for fn in pbar:
         img = load_image(fn, greyscale_fn)
         img = threshold_one_image(img, m_thresh_min, m_thresh_max, dtype)
         if out_fn_pattern is None:
@@ -164,6 +167,9 @@ def main(
             img_ind = int(fn.stem.split('_')[-1])
             out_fn = str(output_folder / out_fn_pattern.format(img_ind))
         cv.imwrite(out_fn, img)
+        im_max = max(im_max, img.max())
+        im_min = min(im_min, img.min())
+        pbar.set_postfix_str(f'min: {im_min}, max: {im_max}')
 
 if __name__ == '__main__':
     tyro.cli(main)
