@@ -114,6 +114,8 @@ def load_from_ctdata(pth: Path) -> pd.DataFrame:
     df = pd.read_csv(pth, skiprows=i, delim_whitespace=True)
     # rename columns
     df.rename(columns=columns, inplace=True)
+    angular_step = np.mean(np.diff(df['angles']))
+    df['angles'] = df['angles'] + angle_correction(angular_step)
     # Due to mismatch in formats, loading from _ctdata required negative sign for angle
     df['angles'] = -df['angles']
     df.set_index('indices', inplace=True, drop=True)
@@ -158,6 +160,15 @@ def pose_to_matrix(theta: float, R: float):
     # cam_matrix = cam_matrix@m4(Rotation.from_euler('XZ', [np.pi/2, phi]).as_matrix())
     # cam_matrix[:3, 3] = pos
     return cam_matrix
+
+def time_correction(rotation_rate: float):
+    tau = np.polyval([-0.0002111, 0.06664], rotation_rate)
+    return tau
+
+def angle_correction(angular_step: float):
+    # empirical correction
+    # angular step in degrees
+    return -0.5 * angular_step + 5.0
     
 def main(
         folder: Path, 
@@ -169,6 +180,7 @@ def main(
         deblurring: Literal['Gauss', 'uniform', None] = None,
         deblurring_points: int = 7,
         time: Optional[float] = None,
+        flat_field: Optional[float] = None,
 ):
 
     if xtekct_file is not None:
@@ -183,7 +195,10 @@ def main(
     print(f'alpha: {alpha*180/np.pi}, R: {R}, scale_factor: {scale_factor}')
 
     f = data['XTekCT']['DetectorPixelsX'] / 2 / np.tan(alpha/2)
-    out_data = {
+    out_data = {}
+    if flat_field is not None:
+        out_data['flat_field'] = flat_field
+    out_data.update({
         'camera_angle_x': alpha,
         'w': data['XTekCT']['DetectorPixelsX'],
         'h': data['XTekCT']['DetectorPixelsY'],
@@ -192,12 +207,16 @@ def main(
         'fl_x': f,
         'fl_y': f,
         'frames': []
-    }
+    })
 
     if angles_file is not None:
         angular_data = load_angles(folder/angles_file)
     else:
         angular_data = load_angles(folder)
+    
+    # angular_data['angles'] = data['XTekCT']['InitialAngle'] + data['XTekCT']['AngularStep'] * np.arange(angular_data.shape[0])
+    # angular_data['angles'] = -angular_data['angles']
+    
 
     if deblurring is not None:
         if exposure_file is not None:
@@ -206,9 +225,11 @@ def main(
             exposure_time = load_exposure_time(folder)
         fit = np.polyfit(angular_data['times'], angular_data['angles'], deg=1)
         angular_data['angles_fit'] = np.polyval(fit, angular_data['times'])
+        rotation_rate = abs(fit[0])
 
     min_time = 1<<20
     max_time = -1<<20
+    mean_thetas = []
 
     for fn in (folder/images_folder).glob('*.png'):
         frame_data = {
@@ -218,12 +239,14 @@ def main(
         proj_num = int(fn.stem.split('_')[-1])
         if deblurring is None:
             theta = angular_data.loc[proj_num, 'angles']
+            mean_thetas.append(theta)
             cam_matrix = pose_to_matrix(theta, R)
             frame_data['transform_matrix'] = listify_matrix(cam_matrix)
             if time is not None:
                 frame_data['time'] = time
             else:
                 frame_data['time'] = 0.0
+            frame_data['angle'] = theta
         else:
             _time = angular_data.loc[proj_num, 'times']
             if deblurring=='Gauss':
@@ -232,10 +255,13 @@ def main(
                 quad_points, quad_weights = uniform_quadrature_points(deblurring_points)
             else:
                 raise ValueError(f'Unknown deblurring method {deblurring}')
-            # instead of _time-0.5*exposure_time, start at _time -0.7416*exposure_time (empirical offset)
-            times = _time - 0.7416*exposure_time + (quad_points/2 + 0.5) * exposure_time
+            quad_weights = quad_weights / 2.0 # convert integral to average
+            quad_weights = quad_weights.tolist()
+            # instead of _time-0.5*exposure_time, start at _time -[DT]*exposure_time (empirical offset)
+            tau = time_correction(rotation_rate)
+            times = _time - tau - 0.5*exposure_time + (quad_points/2 + 0.5) * exposure_time
             thetas = np.polyval(fit, times)
-            print(thetas.mean())
+            mean_thetas.append(np.mean(thetas))
             cam_matrices = [listify_matrix(pose_to_matrix(theta, R)) for theta in thetas]
             if time is not None:
                 times = [time] * len(cam_matrices)
@@ -247,17 +273,23 @@ def main(
                 min_time = min(min_time, min(times))
                 max_time = max(max_time, max(times))
 
+            if len(times)==1:
+                times = times[0]
+                cam_matrices = cam_matrices[0]
+                quad_weights = quad_weights[0]
             frame_data.update({
                 'transform_matrix': cam_matrices,
                 'time': times,
-                'camera_weights': quad_weights.tolist()
+                'camera_weights': quad_weights,
+                'angle': thetas.tolist(),
             })
 
         out_data['frames'].append(frame_data)
 
+    print(mean_thetas)
 
     # normalize time between 0 and 1
-    if deblurring is not None:
+    if deblurring is not None and time is None:
         for frame_data in out_data['frames']:
             if 'eval' in frame_data['file_path']:
                 continue
