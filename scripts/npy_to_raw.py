@@ -48,6 +48,7 @@ def main(
     
     # Handle resolution change if needed
     if out_resolution is not None:
+        orig_dtype = vol.dtype
         X, Y, Z = np.meshgrid(
             np.linspace(0, 1, out_resolution[0]),
             np.linspace(0, 1, out_resolution[1]),
@@ -67,6 +68,7 @@ def main(
             bounds_error=True,
         )
         vol = vol.reshape(X.shape)
+        vol = vol.astype(orig_dtype)
         print(f'Resampled to shape {vol.shape}')
     
     # Handle thresholds if provided
