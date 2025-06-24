@@ -276,7 +276,7 @@ def main(
             if len(times)==1:
                 times = times[0]
                 cam_matrices = cam_matrices[0]
-                quad_weights = quad_weights[0]
+                quad_weights = 1.0
             frame_data.update({
                 'transform_matrix': cam_matrices,
                 'time': times,
