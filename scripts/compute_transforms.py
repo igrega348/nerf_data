@@ -141,7 +141,7 @@ def m4(m: np.ndarray) -> np.ndarray:
     out[:3, :3] = m
     return out
     
-def pose_to_matrix(theta: float, R: float):
+def _pose_to_matrix(theta: float, R: float):
     cam_matrix = np.eye(4)
     
     th_rad = - np.pi * theta / 180 + np.pi/2 # 0 deg when x-axis pointing left
@@ -159,6 +159,27 @@ def pose_to_matrix(theta: float, R: float):
     # cam_matrix = m4(Rotation.from_euler('xz', [np.pi/2, phi]).as_matrix())@cam_matrix
     # cam_matrix = cam_matrix@m4(Rotation.from_euler('XZ', [np.pi/2, phi]).as_matrix())
     # cam_matrix[:3, 3] = pos
+    return cam_matrix
+
+def pose_to_matrix(theta: float, R: float):
+    """
+    Returns a 4x4 camera matrix
+    theta: degrees around the +Z axis
+    R:radius
+    """
+    th = - math.radians(theta)
+    c, s = math.cos(th), math.sin(th)
+
+    R_wc = np.array([
+        [ c,  0,  s],
+        [ s,  0, -c],
+        [ 0,  1,  0],
+    ], dtype=float)
+    t_w  = np.array([-R*s, R*c, 0.0], dtype=float)
+
+    cam_matrix = np.eye(4)
+    cam_matrix[:3, :3] = R_wc
+    cam_matrix[:3, 3]  = t_w
     return cam_matrix
 
 def time_correction(rotation_rate: float):
@@ -231,7 +252,7 @@ def main(
     max_time = -1<<20
     mean_thetas = []
 
-    for fn in (folder/images_folder).glob('*.png'):
+    for fn in sorted((folder/images_folder).glob('*.png')):
         frame_data = {
             'file_path': fn.relative_to(folder).as_posix(),
         }

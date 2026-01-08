@@ -6,7 +6,7 @@ from typing import Optional
 import tyro
 
 
-def main(folder: Path, timestamp_func: Optional[str] = None):
+def main(folder: Path, timestamp_func: Optional[str] = None, enforce_exists: bool = True):
     """Combine transform files from folder into a single file.
 
     Args:
@@ -34,7 +34,7 @@ def main(folder: Path, timestamp_func: Optional[str] = None):
         frames = []
         for frame in d['frames']:
             fn = frame['file_path']
-            if not (folder/fn).exists():
+            if enforce_exists and not (folder/fn).exists():
                 print(f'File {fn} does not exist. Dropping frame')
                 continue
             frames.append(frame)
