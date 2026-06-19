@@ -33,9 +33,9 @@ def main(folder: Path, timestamp_func: Optional[str] = None, enforce_exists: boo
             f['time'] = round(t,2)
         frames = []
         for frame in d['frames']:
-            fn = frame['file_path']
-            if enforce_exists and not (folder/fn).exists():
-                print(f'File {fn} does not exist. Dropping frame')
+            fp = frame['file_path']
+            if enforce_exists and not (folder/fp).exists():
+                print(f'File {fp} does not exist. Dropping frame')
                 continue
             frames.append(frame)
         d['frames'] = frames
